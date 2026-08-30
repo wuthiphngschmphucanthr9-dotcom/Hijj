@@ -1,0 +1,588 @@
+--[[
+    ================================================================
+    SUNDAY HUB - MUSCLE LEGENDS FULL AUTOMATION SYSTEM
+    ระบบเต็มรูปแบบ: Auto Lift + Auto Rebirth + Auto Egg + Teleport + Options
+    ภาษาไทย 100% | รองรับ Executor ทุกตัว (PC / Mobile)
+    ================================================================
+--]]
+
+-- ตั้งค่า Global Config
+getgenv().SundayHub = getgenv().SundayHub or {
+    -- Auto Farm
+    AutoLift = false,
+    SelectedLiftTool = "Weight",
+    AutoRock = false,
+    SelectedRock = "Punching Rock (0 Strength)",
+    
+    -- Auto Rebirth
+    AutoRebirth = false,
+    RebirthDelay = 0.5,
+    
+    -- Auto Egg
+    AutoEgg = false,
+    SelectedEgg = "Frost Crystal",
+    
+    -- Misc
+    AntiAFK = true,
+    WalkSpeed = 16,
+    JumpPower = 50,
+    EnableCustomSpeed = false
+}
+
+local Config = getgenv().SundayHub
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local VirtualUser = game:GetService("VirtualUser")
+local TweenService = game:GetService("TweenService")
+local CoreGui = game:GetService("CoreGui")
+local LocalPlayer = Players.LocalPlayer
+
+-- ตรวจสอบ Remote Events ของเกม
+local rEvents = ReplicatedStorage:WaitForChild("rEvents", 5)
+
+-- ระบบ Anti-AFK กันโดนเตะออกจากเกม
+LocalPlayer.Idled:Connect(function()
+    if Config.AntiAFK then
+        VirtualUser:Button2Down(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
+        task.wait(1)
+        VirtualUser:Button2Up(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
+    end
+end)
+
+----------------------------------------------------------------
+-- สร้าง GUI (SUNDAY HUB - THAI EDITION)
+----------------------------------------------------------------
+
+local ExistingUI = CoreGui:FindFirstChild("SundayHubFullTH") or LocalPlayer.PlayerGui:FindFirstChild("SundayHubFullTH")
+if ExistingUI then ExistingUI:Destroy() end
+
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "SundayHubFullTH"
+ScreenGui.ResetOnSpawn = false
+
+if syn and syn.protect_gui then
+    syn.protect_gui(ScreenGui)
+    ScreenGui.Parent = CoreGui
+elseif gethui then
+    ScreenGui.Parent = gethui()
+else
+    ScreenGui.Parent = CoreGui or LocalPlayer.PlayerGui
+end
+
+-- กรอบหลัก (Main Frame)
+local MainFrame = Instance.new("Frame")
+MainFrame.Name = "MainFrame"
+MainFrame.Size = UDim2.new(0, 540, 0, 380)
+MainFrame.Position = UDim2.new(0.5, -270, 0.5, -190)
+MainFrame.BackgroundColor3 = Color3.fromRGB(18, 18, 26)
+MainFrame.BorderSizePixel = 0
+MainFrame.Active = true
+MainFrame.Draggable = true
+MainFrame.Parent = ScreenGui
+
+local MainCorner = Instance.new("UICorner")
+MainCorner.CornerRadius = UDim.new(0, 12)
+MainCorner.Parent = MainFrame
+
+local MainStroke = Instance.new("UIStroke")
+MainStroke.Thickness = 1.5
+MainStroke.Color = Color3.fromRGB(255, 85, 127)
+MainStroke.Parent = MainFrame
+
+-- แถบหัวข้อด้านบน (Title Bar)
+local TitleBar = Instance.new("Frame")
+TitleBar.Size = UDim2.new(1, 0, 0, 45)
+TitleBar.BackgroundColor3 = Color3.fromRGB(26, 26, 36)
+TitleBar.BorderSizePixel = 0
+TitleBar.Parent = MainFrame
+
+local TitleCorner = Instance.new("UICorner")
+TitleCorner.CornerRadius = UDim.new(0, 12)
+TitleCorner.Parent = TitleBar
+
+local TitleFix = Instance.new("Frame")
+TitleFix.Size = UDim2.new(1, 0, 0, 10)
+TitleFix.Position = UDim2.new(0, 0, 1, -10)
+TitleFix.BackgroundColor3 = Color3.fromRGB(26, 26, 36)
+TitleFix.BorderSizePixel = 0
+TitleFix.Parent = TitleBar
+
+local TitleText = Instance.new("TextLabel")
+TitleText.Size = UDim2.new(0.6, 0, 1, 0)
+TitleText.Position = UDim2.new(0, 15, 0, 0)
+TitleText.BackgroundTransparency = 1
+TitleText.Text = "SUNDAY HUB <font color=\"#FF557F\">| Muscle Legends (เต็มระบบ)</font>"
+TitleText.RichText = true
+TitleText.TextColor3 = Color3.fromRGB(255, 255, 255)
+TitleText.TextSize = 16
+TitleText.Font = Enum.Font.GothamBold
+TitleText.TextXAlignment = Enum.TextXAlignment.Left
+TitleText.Parent = TitleBar
+
+-- ปุ่มย่อหน้าต่าง (-)
+local MinimizeBtn = Instance.new("TextButton")
+MinimizeBtn.Size = UDim2.new(0, 30, 0, 30)
+MinimizeBtn.Position = UDim2.new(1, -75, 0, 7.5)
+MinimizeBtn.BackgroundColor3 = Color3.fromRGB(38, 38, 52)
+MinimizeBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+MinimizeBtn.Text = "-"
+MinimizeBtn.TextSize = 20
+MinimizeBtn.Font = Enum.Font.GothamBold
+MinimizeBtn.Parent = TitleBar
+
+local MinCorner = Instance.new("UICorner")
+MinCorner.CornerRadius = UDim.new(0, 6)
+MinCorner.Parent = MinimizeBtn
+
+-- ปุ่มปิดหน้าต่าง (X)
+local CloseBtn = Instance.new("TextButton")
+CloseBtn.Size = UDim2.new(0, 30, 0, 30)
+CloseBtn.Position = UDim2.new(1, -38, 0, 7.5)
+CloseBtn.BackgroundColor3 = Color3.fromRGB(255, 60, 80)
+CloseBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+CloseBtn.Text = "✕"
+CloseBtn.TextSize = 14
+CloseBtn.Font = Enum.Font.GothamBold
+CloseBtn.Parent = TitleBar
+
+local CloseCorner = Instance.new("UICorner")
+CloseCorner.CornerRadius = UDim.new(0, 6)
+CloseCorner.Parent = CloseBtn
+
+-- ปุ่มลอยเมื่อย่อหน้าต่าง (Floating Button)
+local OpenWidget = Instance.new("TextButton")
+OpenWidget.Name = "SundayOpenWidget"
+OpenWidget.Size = UDim2.new(0, 120, 0, 40)
+OpenWidget.Position = UDim2.new(0, 15, 0.2, 0)
+OpenWidget.BackgroundColor3 = Color3.fromRGB(26, 26, 36)
+OpenWidget.TextColor3 = Color3.fromRGB(255, 85, 127)
+OpenWidget.Text = "☀️ SUNDAY HUB"
+OpenWidget.Font = Enum.Font.GothamBold
+OpenWidget.TextSize = 13
+OpenWidget.Visible = false
+OpenWidget.Active = true
+OpenWidget.Draggable = true
+OpenWidget.Parent = ScreenGui
+
+local WidgetCorner = Instance.new("UICorner")
+WidgetCorner.CornerRadius = UDim.new(0, 8)
+WidgetCorner.Parent = OpenWidget
+
+local WidgetStroke = Instance.new("UIStroke")
+WidgetStroke.Color = Color3.fromRGB(255, 85, 127)
+WidgetStroke.Thickness = 1.5
+WidgetStroke.Parent = OpenWidget
+
+MinimizeBtn.MouseButton1Click:Connect(function()
+    MainFrame.Visible = false
+    OpenWidget.Visible = true
+end)
+
+OpenWidget.MouseButton1Click:Connect(function()
+    MainFrame.Visible = true
+    OpenWidget.Visible = false
+end)
+
+CloseBtn.MouseButton1Click:Connect(function()
+    ScreenGui:Destroy()
+end)
+
+----------------------------------------------------------------
+-- TAB SYSTEM (ระบบแท็บเมนู)
+----------------------------------------------------------------
+
+local TabBar = Instance.new("Frame")
+TabBar.Size = UDim2.new(0, 145, 1, -55)
+TabBar.Position = UDim2.new(0, 10, 0, 50)
+TabBar.BackgroundColor3 = Color3.fromRGB(22, 22, 30)
+TabBar.BorderSizePixel = 0
+TabBar.Parent = MainFrame
+
+local TabCorner = Instance.new("UICorner")
+TabCorner.CornerRadius = UDim.new(0, 8)
+TabCorner.Parent = TabBar
+
+local TabList = Instance.new("UIListLayout")
+TabList.SortOrder = Enum.SortOrder.LayoutOrder
+TabList.Padding = UDim.new(0, 6)
+TabList.Parent = TabBar
+
+local ContainerFrame = Instance.new("Frame")
+ContainerFrame.Size = UDim2.new(1, -175, 1, -55)
+ContainerFrame.Position = UDim2.new(0, 165, 0, 50)
+ContainerFrame.BackgroundTransparency = 1
+ContainerFrame.Parent = MainFrame
+
+local Tabs = {}
+
+local function CreateTab(name, icon)
+    local TabBtn = Instance.new("TextButton")
+    TabBtn.Size = UDim2.new(1, 0, 0, 38)
+    TabBtn.BackgroundColor3 = Color3.fromRGB(30, 30, 42)
+    TabBtn.BackgroundTransparency = 1
+    TabBtn.TextColor3 = Color3.fromRGB(160, 160, 180)
+    TabBtn.Text = icon .. " " .. name
+    TabBtn.Font = Enum.Font.GothamMedium
+    TabBtn.TextSize = 13
+    TabBtn.TextXAlignment = Enum.TextXAlignment.Left
+    TabBtn.Parent = TabBar
+
+    local BtnPadding = Instance.new("UIPadding")
+    BtnPadding.PaddingLeft = UDim.new(0, 12)
+    BtnPadding.Parent = TabBtn
+
+    local TabPage = Instance.new("ScrollingFrame")
+    TabPage.Size = UDim2.new(1, 0, 1, 0)
+    TabPage.BackgroundTransparency = 1
+    TabPage.BorderSizePixel = 0
+    TabPage.ScrollBarThickness = 3
+    TabPage.ScrollBarImageColor3 = Color3.fromRGB(255, 85, 127)
+    TabPage.Visible = false
+    TabPage.Parent = ContainerFrame
+
+    local PageList = Instance.new("UIListLayout")
+    PageList.SortOrder = Enum.SortOrder.LayoutOrder
+    PageList.Padding = UDim.new(0, 8)
+    PageList.Parent = TabPage
+
+    TabBtn.MouseButton1Click:Connect(function()
+        for _, t in pairs(Tabs) do
+            t.Btn.TextColor3 = Color3.fromRGB(160, 160, 180)
+            t.Btn.BackgroundTransparency = 1
+            t.Page.Visible = false
+        end
+        TabBtn.TextColor3 = Color3.fromRGB(255, 85, 127)
+        TabBtn.BackgroundTransparency = 0.8
+        TabPage.Visible = true
+    end)
+
+    table.insert(Tabs, {Btn = TabBtn, Page = TabPage})
+
+    if #Tabs == 1 then
+        TabBtn.TextColor3 = Color3.fromRGB(255, 85, 127)
+        TabBtn.BackgroundTransparency = 0.8
+        TabPage.Visible = true
+    end
+
+    return TabPage
+end
+
+-- สร้างเมนูแท็บต่างๆ
+local FarmPage = CreateTab("ฟาร์มกล้าม", "🏋️")
+local RebirthPage = CreateTab("เกิดใหม่ (Rebirth)", "🔄")
+local EggPage = CreateTab("สุ่มคริสตัล", "🥚")
+local TeleportPage = CreateTab("ย้ายจุด / วาร์ป", "⚡")
+local SettingPage = CreateTab("ตั้งค่าเพิ่มเติม", "⚙️")
+
+----------------------------------------------------------------
+-- HELPER UI COMPONENTS (ส่วนประกอบ UI ภาษาไทย)
+----------------------------------------------------------------
+
+local function CreateToggle(parent, text, defaultState, callback)
+    local ToggleFrame = Instance.new("Frame")
+    ToggleFrame.Size = UDim2.new(1, -10, 0, 42)
+    ToggleFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 35)
+    ToggleFrame.Parent = parent
+
+    local Corner = Instance.new("UICorner")
+    Corner.CornerRadius = UDim.new(0, 8)
+    Corner.Parent = ToggleFrame
+
+    local Label = Instance.new("TextLabel")
+    Label.Size = UDim2.new(0.68, 0, 1, 0)
+    Label.Position = UDim2.new(0, 12, 0, 0)
+    Label.BackgroundTransparency = 1
+    Label.Text = text
+    Label.TextColor3 = Color3.fromRGB(230, 230, 240)
+    Label.Font = Enum.Font.Gotham
+    Label.TextSize = 13
+    Label.TextXAlignment = Enum.TextXAlignment.Left
+    Label.Parent = ToggleFrame
+
+    local Btn = Instance.new("TextButton")
+    Btn.Size = UDim2.new(0, 48, 0, 24)
+    Btn.Position = UDim2.new(1, -58, 0.5, -12)
+    Btn.BackgroundColor3 = defaultState and Color3.fromRGB(255, 85, 127) or Color3.fromRGB(45, 45, 60)
+    Btn.Text = ""
+    Btn.Parent = ToggleFrame
+
+    local BtnCorner = Instance.new("UICorner")
+    BtnCorner.CornerRadius = UDim.new(1, 0)
+    BtnCorner.Parent = Btn
+
+    local Dot = Instance.new("Frame")
+    Dot.Size = UDim2.new(0, 18, 0, 18)
+    Dot.Position = defaultState and UDim2.new(1, -21, 0.5, -9) or UDim2.new(0, 3, 0.5, -9)
+    Dot.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    Dot.Parent = Btn
+
+    local DotCorner = Instance.new("UICorner")
+    DotCorner.CornerRadius = UDim.new(1, 0)
+    DotCorner.Parent = Dot
+
+    local state = defaultState
+    Btn.MouseButton1Click:Connect(function()
+        state = not state
+        local targetDotPos = state and UDim2.new(1, -21, 0.5, -9) or UDim2.new(0, 3, 0.5, -9)
+        local targetBtnBg = state and Color3.fromRGB(255, 85, 127) or Color3.fromRGB(45, 45, 60)
+
+        TweenService:Create(Dot, TweenInfo.new(0.2), {Position = targetDotPos}):Play()
+        TweenService:Create(Btn, TweenInfo.new(0.2), {BackgroundColor3 = targetBtnBg}):Play()
+
+        callback(state)
+    end)
+end
+
+local function CreateDropdown(parent, text, options, defaultOption, callback)
+    local DropFrame = Instance.new("Frame")
+    DropFrame.Size = UDim2.new(1, -10, 0, 42)
+    DropFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 35)
+    DropFrame.ClipsDescendants = true
+    DropFrame.Parent = parent
+
+    local Corner = Instance.new("UICorner")
+    Corner.CornerRadius = UDim.new(0, 8)
+    Corner.Parent = DropFrame
+
+    local Label = Instance.new("TextLabel")
+    Label.Size = UDim2.new(0.48, 0, 0, 42)
+    Label.Position = UDim2.new(0, 12, 0, 0)
+    Label.BackgroundTransparency = 1
+    Label.Text = text
+    Label.TextColor3 = Color3.fromRGB(230, 230, 240)
+    Label.Font = Enum.Font.Gotham
+    Label.TextSize = 13
+    Label.TextXAlignment = Enum.TextXAlignment.Left
+    Label.Parent = DropFrame
+
+    local SelectBtn = Instance.new("TextButton")
+    SelectBtn.Size = UDim2.new(0.48, 0, 0, 28)
+    SelectBtn.Position = UDim2.new(0.48, 0, 0, 7)
+    SelectBtn.BackgroundColor3 = Color3.fromRGB(38, 38, 52)
+    SelectBtn.TextColor3 = Color3.fromRGB(255, 85, 127)
+    SelectBtn.Text = defaultOption .. " ▼"
+    SelectBtn.Font = Enum.Font.GothamMedium
+    SelectBtn.TextSize = 11
+    SelectBtn.Parent = DropFrame
+
+    local SelectCorner = Instance.new("UICorner")
+    SelectCorner.CornerRadius = UDim.new(0, 6)
+    SelectCorner.Parent = SelectBtn
+
+    local OptionHolder = Instance.new("Frame")
+    OptionHolder.Size = UDim2.new(1, -24, 0, #options * 28)
+    OptionHolder.Position = UDim2.new(0, 12, 0, 45)
+    OptionHolder.BackgroundTransparency = 1
+    OptionHolder.Parent = DropFrame
+
+    local List = Instance.new("UIListLayout")
+    List.Padding = UDim.new(0, 4)
+    List.Parent = OptionHolder
+
+    local expanded = false
+    SelectBtn.MouseButton1Click:Connect(function()
+        expanded = not expanded
+        local targetSize = expanded and UDim2.new(1, -10, 0, 48 + (#options * 32)) or UDim2.new(1, -10, 0, 42)
+        TweenService:Create(DropFrame, TweenInfo.new(0.25), {Size = targetSize}):Play()
+    end)
+
+    for _, opt in ipairs(options) do
+        local OptBtn = Instance.new("TextButton")
+        OptBtn.Size = UDim2.new(1, 0, 0, 28)
+        OptBtn.BackgroundColor3 = Color3.fromRGB(32, 32, 44)
+        OptBtn.TextColor3 = Color3.fromRGB(200, 200, 220)
+        OptBtn.Text = opt
+        OptBtn.Font = Enum.Font.Gotham
+        OptBtn.TextSize = 12
+        OptBtn.Parent = OptionHolder
+
+        local OptCorner = Instance.new("UICorner")
+        OptCorner.CornerRadius = UDim.new(0, 4)
+        OptCorner.Parent = OptBtn
+
+        OptBtn.MouseButton1Click:Connect(function()
+            SelectBtn.Text = opt .. " ▼"
+            expanded = false
+            TweenService:Create(DropFrame, TweenInfo.new(0.25), {Size = UDim2.new(1, -10, 0, 42)}):Play()
+            callback(opt)
+        end)
+    end
+end
+
+local function CreateButton(parent, text, callback)
+    local Btn = Instance.new("TextButton")
+    Btn.Size = UDim2.new(1, -10, 0, 38)
+    Btn.BackgroundColor3 = Color3.fromRGB(255, 85, 127)
+    Btn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    Btn.Text = text
+    Btn.Font = Enum.Font.GothamBold
+    Btn.TextSize = 13
+    Btn.Parent = parent
+
+    local Corner = Instance.new("UICorner")
+    Corner.CornerRadius = UDim.new(0, 8)
+    Corner.Parent = Btn
+
+    Btn.MouseButton1Click:Connect(callback)
+end
+
+----------------------------------------------------------------
+-- TAB 1: ฟาร์มกล้าม (AUTO FARM)
+----------------------------------------------------------------
+
+CreateToggle(FarmPage, "เปิดใช้งานปั๊มกล้ามอัตโนมัติ", Config.AutoLift, function(v)
+    Config.AutoLift = v
+end)
+
+local toolOptions = {"Weight", "Pushups", "Situps", "Punch"}
+CreateDropdown(FarmPage, "เลือกอุปกรณ์ฝึก:", toolOptions, Config.SelectedLiftTool, function(selected)
+    Config.SelectedLiftTool = selected
+end)
+
+-- ลูปทำงาน Auto Lift
+task.spawn(function()
+    while true do
+        task.wait(0.1)
+        if Config.AutoLift then
+            pcall(function()
+                local char = LocalPlayer.Character
+                if char then
+                    local toolName = Config.SelectedLiftTool
+                    local backpackTool = LocalPlayer.Backpack:FindFirstChild(toolName)
+                    local equippedTool = char:FindFirstChild(toolName)
+
+                    -- ถืออุปกรณ์อัตโนมัติ
+                    if backpackTool then
+                        char.Humanoid:EquipTool(backpackTool)
+                    end
+
+                    -- ยิง Remote สำหรับปั๊มกล้าม
+                    local muscleEvent = LocalPlayer:FindFirstChild("muscleEvent") or ReplicatedStorage:FindFirstChild("muscleEvent")
+                    if muscleEvent then
+                        muscleEvent:FireServer("rep")
+                    end
+
+                    local activeTool = char:FindFirstChildOfClass("Tool")
+                    if activeTool then
+                        activeTool:Activate()
+                    end
+                end
+            end)
+        end
+    end
+end)
+
+----------------------------------------------------------------
+-- TAB 2: เกิดใหม่ (AUTO REBIRTH)
+----------------------------------------------------------------
+
+CreateToggle(RebirthPage, "เปิดระบบ เกิดใหม่ (Rebirth) อัตโนมัติ", Config.AutoRebirth, function(v)
+    Config.AutoRebirth = v
+end)
+
+CreateButton(RebirthPage, "⚡ กด Rebirth ทันที (1 ครั้ง)", function()
+    pcall(function()
+        if rEvents and rEvents:FindFirstChild("rebirthRemote") then
+            rEvents.rebirthRemote:InvokeServer("rebirthRequest")
+        end
+    end)
+end)
+
+-- ลูปทำงาน Auto Rebirth
+task.spawn(function()
+    while true do
+        task.wait(Config.RebirthDelay)
+        if Config.AutoRebirth then
+            pcall(function()
+                if rEvents and rEvents:FindFirstChild("rebirthRemote") then
+                    rEvents.rebirthRemote:InvokeServer("rebirthRequest")
+                elseif rEvents and rEvents:FindFirstChild("rebirthEvent") then
+                    rEvents.rebirthEvent:FireServer("rebirthRequest")
+                end
+            end)
+        end
+    end
+end)
+
+----------------------------------------------------------------
+-- TAB 3: สุ่มคริสตัล (AUTO EGG)
+----------------------------------------------------------------
+
+local crystalList = {
+    "Frost Crystal",
+    "Mythical Crystal",
+    "Inferno Crystal",
+    "Legends Crystal",
+    "500M Crystal",
+    "Galaxy Crystal"
+}
+
+CreateToggle(EggPage, "เปิดระบบ สุ่มคริสตัล อัตโนมัติ", Config.AutoEgg, function(v)
+    Config.AutoEgg = v
+end)
+
+CreateDropdown(EggPage, "เลือกคริสตัล (Crystal):", crystalList, Config.SelectedEgg, function(selected)
+    Config.SelectedEgg = selected
+end)
+
+-- ลูปทำงาน Auto Egg
+task.spawn(function()
+    while true do
+        task.wait(0.4)
+        if Config.AutoEgg then
+            pcall(function()
+                if rEvents and rEvents:FindFirstChild("openEggRemote") then
+                    rEvents.openEggRemote:InvokeServer("openEgg", Config.SelectedEgg)
+                end
+            end)
+        end
+    end
+end)
+
+----------------------------------------------------------------
+-- TAB 4: ย้ายจุด / วาร์ป (TELEPORTS)
+----------------------------------------------------------------
+
+local locations = {
+    ["จุดเริ่มต้น (Safezone)"] = Vector3.new(7, 4, 108),
+    ["ยิมชายหาด (Beach Gym)"] = Vector3.new(-2584, 6, -485),
+    ["ยิมตำนาน (Legends Gym)"] = Vector3.new(4616, 994, -3914),
+    ["ยิมจอมมาร (Muscle King Gym)"] = Vector3.new(-8633, 14, -5729),
+    ["ยิมคริสตัล (Infernal Gym)"] = Vector3.new(2450, 8, 1100)
+}
+
+for placeName, pos in pairs(locations) do
+    CreateButton(TeleportPage, "วาร์ปไป: " .. placeName, function()
+        pcall(function()
+            if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+                LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(pos)
+            end
+        end)
+    end)
+end
+
+----------------------------------------------------------------
+-- TAB 5: ตั้งค่าเพิ่มเติม (SETTINGS & UTILITIES)
+----------------------------------------------------------------
+
+CreateToggle(SettingPage, "ป้องกันการหลุดจากเกม (Anti-AFK)", Config.AntiAFK, function(v)
+    Config.AntiAFK = v
+end)
+
+CreateButton(SettingPage, "⚡ เพิ่มความเร็วการเดิน (Speed Up)", function()
+    pcall(function()
+        if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
+            LocalPlayer.Character.Humanoid.WalkSpeed = 70
+        end
+    end)
+end)
+
+CreateButton(SettingPage, "⚡ เพิ่มความสูงการกระโดด (High Jump)", function()
+    pcall(function()
+        if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
+            LocalPlayer.Character.Humanoid.JumpPower = 120
+        end
+    end)
+end)
+
+print("[SUNDAY HUB] สคริปต์ Muscle Legends ภาษาไทยเต็มรูปแบบ โหลดเสร็จสิ้น!")
